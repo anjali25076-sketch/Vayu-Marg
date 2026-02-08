@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Official Dashboard | Vayu-Marg</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .content-section {
+            display: none !important;
+            padding: 2rem 3rem;
+        }
+        .content-section.active {
+            display: block !important;
+        }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .metric-card { background: white; padding: 2rem; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .metric-value-large { font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 700; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .metric-label-large { font-size: 0.875rem; color: #64748b; margin-top: 0.5rem; }
+        .stats-table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 12px; overflow: hidden; }
+        .stats-table th { background: #f1f5f9; padding: 1rem; text-align: left; font-weight: 600; }
+        .stats-table td { padding: 1rem; border-top: 1px solid #e2e8f0; }
+        .map-container { height: 500px; background: white; border-radius: 12px; overflow: hidden; margin-top: 2rem; }
+        #officialMap { height: 100%; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-small">
+                    <svg viewBox="0 0 100 100" width="40" height="40">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#0EA5E9" stroke-width="3" opacity="0.3"/>
+                        <circle cx="50" cy="50" r="15" fill="#0EA5E9"/>
+                    </svg>
+                </div>
+                <span class="logo-text-small">VayuMarg</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-section="overview"><span>Overview</span></a>
+                <a href="#" class="nav-item" data-section="operations"><span>Live Operations</span></a>
+                <a href="#" class="nav-item" data-section="analytics"><span>Analytics</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">{{ session.user_name[0] if session.user_name else 'O' }}</div>
+                    <div class="user-info">
+                        <div class="user-name">{{ session.user_name or 'Official' }}</div>
+                        <div class="user-role">Government Official</div>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </aside>
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <div class="header-content">
+                    <div>
+                        <h1 class="page-title">Government Analytics</h1>
+                        <p class="page-subtitle">Real-time performance metrics and insights</p>
+                    </div>
+                </div>
+            </header>
+            <section class="content-section active" id="overview-section" style="display: block; padding: 2rem 3rem;">
+                <h2>Today's Performance</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value-large" id="areas_purified">23</div>
+                        <div class="metric-label-large">Areas Purified</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value-large"><span id="water_saved">40</span>%</div>
+                        <div class="metric-label-large">Water Saved</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value-large"><span id="response_time">12</span>m</div>
+                        <div class="metric-label-large">Avg Response Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value-large" id="hotspots_detected">45</div>
+                        <div class="metric-label-large">Hotspots Detected</div>
+                    </div>
+                </div>
+                <h2 style="margin-top: 3rem;">Active Operations</h2>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>AQI</th>
+                            <th>Status</th>
+                            <th>Worker Assigned</th>
+                            <th>Time Elapsed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Anand Vihar</td>
+                            <td><strong style="color: #7F1D1D;">450</strong></td>
+                            <td><span style="background: #FBBF24; color: white; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem;">En Route</span></td>
+                            <td>Worker #127</td>
+                            <td>8 min</td>
+                        </tr>
+                        <tr>
+                            <td>Rohini</td>
+                            <td><strong style="color: #9333EA;">420</strong></td>
+                            <td><span style="background: #0EA5E9; color: white; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem;">Dispatched</span></td>
+                            <td>Worker #089</td>
+                            <td>3 min</td>
+                        </tr>
+                        <tr>
+                            <td>Dwarka</td>
+                            <td><strong style="color: #EF4444;">380</strong></td>
+                            <td><span style="background: #10B981; color: white; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem;">In Progress</span></td>
+                            <td>Worker #054</td>
+                            <td>22 min</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- Live Operations Map Section -->
+            <section class="content-section" id="operations-section" style="padding: 2rem 3rem;">
+                <h2>Live Operations Map</h2>
+                <p style="color: #64748b; margin-bottom: 2rem;">Real-time view of all active workers and hotspots</p>
+                
+                <div class="map-container">
+                    <div id="officialMap"></div>
+                </div>
+                
+                <div style="background: white; padding: 2rem; border-radius: 12px; margin-top: 1.5rem;">
+                    <h3 style="margin: 0 0 1.5rem 0;">Active Workers Status</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                        <div style="padding: 1.5rem; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #fbbf24;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <div style="width: 12px; height: 12px; background: #fbbf24; border-radius: 50%;"></div>
+                                <h4 style="margin: 0;">Worker #127</h4>
+                            </div>
+                            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">En Route to Anand Vihar</p>
+                            <p style="margin: 0.5rem 0 0 0; font-weight: 600;">ETA: 8 min</p>
+                        </div>
+                        
+                        <div style="padding: 1.5rem; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <div style="width: 12px; height: 12px; background: #0ea5e9; border-radius: 50%;"></div>
+                                <h4 style="margin: 0;">Worker #089</h4>
+                            </div>
+                            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Dispatched to Rohini</p>
+                            <p style="margin: 0.5rem 0 0 0; font-weight: 600;">ETA: 15 min</p>
+                        </div>
+                        
+                        <div style="padding: 1.5rem; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <div style="width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></div>
+                                <h4 style="margin: 0;">Worker #054</h4>
+                            </div>
+                            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Active at Dwarka</p>
+                            <p style="margin: 0.5rem 0 0 0; font-weight: 600;">Progress: 65%</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Analytics Section -->
+            <section class="content-section" id="analytics-section" style="padding: 2rem 3rem;">
+                <h2>Analytics & Insights</h2>
+                <p style="color: #64748b; margin-bottom: 2rem;">Historical performance and trend analysis</p>
+                
+                <div style="background: white; padding: 2rem; border-radius: 12px;">
+                    <h3 style="margin: 0 0 1rem 0;">This Week's Summary</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;">
+                        <div>
+                            <h4 style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem;">Total Hotspots Mitigated</h4>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #10b981;">156</div>
+                            <p style="color: #059669; margin: 0.5rem 0 0 0; font-size: 0.875rem;">↑ 23% from last week</p>
+                        </div>
+                        <div>
+                            <h4 style="color: #64748b; margin: 0 0 1rem 0; font-size: 0.875rem;">Average Response Time</h4>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #0ea5e9;">11.5m</div>
+                            <p style="color: #0284c7; margin: 0.5rem 0 0 0; font-size: 0.875rem;">↓ 15% from last week</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px;">
+                        <h4 style="margin: 0 0 1rem 0;">Efficiency Metrics</h4>
+                        <ul style="margin: 0; padding-left: 1.5rem; color: #64748b;">
+                            <li style="margin-bottom: 0.5rem;">Water usage efficiency: <strong>92%</strong></li>
+                            <li style="margin-bottom: 0.5rem;">Hotspot prediction accuracy: <strong>87%</strong></li>
+                            <li style="margin-bottom: 0.5rem;">Citizen satisfaction score: <strong>4.6/5</strong></li>
+                            <li>Cost savings vs traditional methods: <strong>₹2.4 Cr/month</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script>
+        let officialMap;
+        
+        // Initialize official operations map
+        function initOfficialMap() {
+            officialMap = L.map('officialMap').setView([28.7041, 77.1025], 11);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(officialMap);
+            
+            // Load hotspots and workers
+            loadOperationsData();
+        }
+        
+        async function loadOperationsData() {
+            try {
+                const response = await fetch('/api/hotspots/active');
+                const hotspots = await response.json();
+                
+                // Add hotspots
+                hotspots.forEach(hotspot => {
+                    const color = getAQIColor(hotspot.aqi);
+                    const icon = L.divIcon({
+                        className: 'hotspot-marker',
+                        html: `<div style="background: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+                    
+                    L.marker([hotspot.lat, hotspot.lng], {icon: icon})
+                        .addTo(officialMap)
+                        .bindPopup(`
+                            <h3>${hotspot.area_name}</h3>
+                            <p><strong>AQI:</strong> ${hotspot.aqi}</p>
+                            <p><strong>Status:</strong> ${hotspot.is_active ? 'Active' : 'Mitigated'}</p>
+                        `);
+                });
+                
+                // Add worker markers
+                const workers = [
+                    {id: 127, lat: 28.6800, lng: 77.2000, status: 'en_route', name: 'Worker #127'},
+                    {id: 89, lat: 28.7200, lng: 77.1200, status: 'dispatched', name: 'Worker #089'},
+                    {id: 54, lat: 28.5921, lng: 77.0460, status: 'active', name: 'Worker #054'}
+                ];
+                
+                workers.forEach(worker => {
+                    const statusColor = worker.status === 'active' ? '#10b981' : 
+                                       worker.status === 'en_route' ? '#fbbf24' : '#0ea5e9';
+                    
+                    const icon = L.divIcon({
+                        className: 'worker-marker',
+                        html: `<div style="background: ${statusColor}; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">W</div>`,
+                        iconSize: [35, 35],
+                        iconAnchor: [17, 17]
+                    });
+                    
+                    L.marker([worker.lat, worker.lng], {icon: icon})
+                        .addTo(officialMap)
+                        .bindPopup(`
+                            <h3>${worker.name}</h3>
+                            <p><strong>Status:</strong> ${worker.status.replace('_', ' ').toUpperCase()}</p>
+                        `);
+                });
+                
+            } catch (error) {
+                console.error('Error loading operations data:', error);
+            }
+        }
+        
+        function getAQIColor(aqi) {
+            if (aqi <= 50) return '#10B981';
+            if (aqi <= 100) return '#FBBF24';
+            if (aqi <= 150) return '#FB923C';
+            if (aqi <= 200) return '#EF4444';
+            if (aqi <= 300) return '#9333EA';
+            return '#7F1D1D';
+        }
+        
+        function logout() {
+            fetch('/api/logout', { method: 'POST' }).then(() => window.location.href = '/login');
+        }
+        
+        // Section navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.dataset.section;
+                
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                const targetSection = document.getElementById(`${section}-section`);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+                
+                // Initialize map when switching to operations section
+                if (section === 'operations') {
+                    if (!officialMap) {
+                        setTimeout(initOfficialMap, 100);
+                    } else {
+                        setTimeout(() => officialMap.invalidateSize(), 100);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
