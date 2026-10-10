@@ -1,7 +1,8 @@
 # Vayu-Marg: Hyper-Local Air Intelligence for Delhi
 
 ## 🌟 Delhi AI Grind 2024 - Environment & Sustainability Track
-### Team Air-Force | IIIT Delhi
+### Team Air-Force | IIIT Delhi” → “Team LAVISH-N | IIIT Delhi
+### Winner team (one of 60), per the official Winners and Finalists list.
 
 ---
 
